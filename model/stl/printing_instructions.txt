@@ -1,0 +1,10 @@
+body_bottom		1x
+body_top		1x
+leg1			6x
+leg1_seg1		6x
+leg2_segA		6x
+leg2_segB		6x
+leg2_segC		6x
+leg3_f			12x
+leg_bond1_f		24x
+leg_bond2_f		12x
