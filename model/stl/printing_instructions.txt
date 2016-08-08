@@ -1,10 +1,22 @@
-body_bottom		1x
-body_top		1x
-leg1			6x
-leg1_seg1		6x
-leg2_segA		6x
-leg2_segB		6x
-leg2_segC		6x
-leg3_f			12x
-leg_bond1_f		24x
-leg_bond2_f		12x
+Part name	# of prints needed
+--------------------------------
+body_bottom	1x
+body_top	1x
+leg1		6x
+leg1_seg1	6x
+leg2_segA	6x
+leg2_segB	6x
+leg2_segC	6x
+leg3_f		12x
+leg_bond1_f	24x
+leg_bond2_f	12x
+
+Alternatively, instead of printing leg_segA,B nad C, you can just print leg2.
+However, that will require precisely calibrated printer. See the SolidWorks or SketchUp file for details.
+
+Before printing, make sure that all the holes are the correct size. If you're using M3 bolts for the moving parts,
+you will need the holes to have at least 3.25mm in diameter. The two bigger holes in leg2(_segA) are for servo gear axis.
+Make sure their diameter is the same as the one of the gear axis on the servos you are using. 
+In body_bottom, you will find rectangle-shaped holes for mounting the horizontal servos. 
+Make sure they are big enough for the servos you will be using. To mount these servos, you will probably need to take them apart,
+slide them in and reassemble them.
