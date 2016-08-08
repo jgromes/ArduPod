@@ -12,4 +12,6 @@ If not, go read it! If you did, and still didn't run away, good job! Here you wi
 
 * **/model/**
 
-   files for 3D printing in the following formats: STL, SolidWorks parts
+   Files for 3D printing in the following formats: STL, SolidWorks parts, SketchUp
+   
+   See /model/stl/printing_instructions.txt for details.
