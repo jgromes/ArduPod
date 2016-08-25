@@ -1,5 +1,11 @@
-AP_Utils    KEYWORD1
-reset       KEYWORD2
-stretchAll  KEYWORD2
-moveServo   KEYWORD2
-walk        KEYWORD2
+AP_Utils	KEYWORD1
+
+moveServo	KEYWORD2
+reset	KEYWORD2
+stretchAll	KEYWORD2
+walk	KEYWORD2
+sr04	KEYWORD2
+
+M	LITERAL1
+CM	LITERAL1
+MM	LITERAL1

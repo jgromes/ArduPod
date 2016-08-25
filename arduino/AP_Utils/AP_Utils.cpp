@@ -40,6 +40,55 @@ void AP_Utils::walk(int dir) {
 
 }
 
+float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
+  float duration, distance;
+  digitalWrite(trig, LOW); 
+  delayMicroseconds(2); 
+
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10); 
+ 
+  digitalWrite(trig, LOW);
+  duration = pulseIn(echo, HIGH);
+ 
+  distance = (346.3*duration*0.000001*unit)/2;
+  
+  if((distance >= 0.02*unit) && (distance <= 4*unit)) {
+    return(distance);
+  } else {
+    return 0;
+  }
+}
+
+float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time) {
+  float duration, distance, average;
+  float total = 0;
+  float pause = time/samples;
+  for(int i=0; i<samples; i++) {
+    digitalWrite(trig, LOW); 
+    delayMicroseconds(2); 
+
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(10); 
+   
+    digitalWrite(trig, LOW);
+    duration = pulseIn(echo, HIGH);
+   
+    distance = (346.3*duration*0.000001*unit)/2;
+    
+    if((distance >= 0.02*unit) && (distance <= 4*unit)) {
+      Serial.println(distance);
+      total += distance;
+      delay(pause);
+    } else {
+      Serial.println("E");
+      i--;
+    }
+  }
+  average = total/samples;
+  return average;
+}
+
 int AP_Utils::pulseLength(int deg) {
   return map(deg, 0, 180, SERVOMIN, SERVOMAX);
 }
