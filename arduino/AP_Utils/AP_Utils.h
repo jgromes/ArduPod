@@ -11,9 +11,7 @@
 
 //#define DEBUG
 
-//#define RESOLUTION 1000  //mm
-//#define RESOLUTION 100   //cm
-//#define RESOLUTION 1     //m
+#define PWM_FREQ 60
 #define M  1
 #define CM 100
 #define MM 1000
@@ -23,6 +21,7 @@
 
 #define HORIZONTAL  0
 #define VERTICAL    1
+#define SENSOR      2
 
 #define HORIZ_MAX   50
 #define HORIZ_DEF   90
@@ -42,6 +41,7 @@ struct servo {
 class AP_Utils {
  public:
   AP_Utils(void);
+  void begin(void);
   Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
   servo servos[16];
   void moveServo(uint8_t servo, int deg, bool smooth);
@@ -61,7 +61,6 @@ class AP_Utils {
   void legDown(uint8_t leg, bool smooth);
   void legStretch(uint8_t leg, bool smooth);
   void pwmove(uint8_t i, int deg);
-
 };
 
 #endif
