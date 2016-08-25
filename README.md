@@ -1,6 +1,6 @@
 # ArduPod
 ## Arduino-based hexapod robot
-**Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com)?**
+**Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com/how-tos/arduino-guide/how-to-arduino-hexapod-part-1-mechanics-and-wiring/)?**
 
 If not, go read it! If you did, and still didn't run away, good job! Here you will find all the files used in the article.
 
