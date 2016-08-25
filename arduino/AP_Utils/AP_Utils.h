@@ -51,16 +51,18 @@ class AP_Utils {
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
   float sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time);
-  //float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time); //TODO because #fuckaverage
+  float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
  private:
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
-
+  
   int pulseLength(int deg);
   void legUp(uint8_t leg, bool smooth);
   void legDown(uint8_t leg, bool smooth);
   void legStretch(uint8_t leg, bool smooth);
   void pwmove(uint8_t i, int deg);
+  
+  float median(float *values, int numValues);
 };
 
 #endif

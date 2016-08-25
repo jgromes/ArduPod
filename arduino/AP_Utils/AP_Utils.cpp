@@ -63,6 +63,8 @@ void AP_Utils::walk(int dir) {
 }
 
 float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
   float duration, distance;
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
@@ -109,7 +111,7 @@ float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
       }
       Serial.println("is out of bounds for SR04, ignoring.");
     #endif
-    return 0;
+    return -1;
   }
 }
 
@@ -121,7 +123,7 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
     Serial.print(time);
     Serial.println(" ms)");
   #endif
-  float average, pause;
+  float average, pause, value;
   float total = 0;
   if(time/samples < 12) {
   #ifdef DEBUG
@@ -132,8 +134,13 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
     pause = time/samples - 12;
   }
   for(int i=0; i<samples; i++) {
-    total += sr04(trig, echo, unit);
-    delay(pause);
+    value = sr04(trig, echo, unit);
+    if(value != -1) {
+      total += value;
+      delay(pause);
+    } else {
+      i--;
+    }
   }
   average = total/samples;
   #ifdef DEBUG
@@ -152,6 +159,55 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
     }
   #endif
   return average;
+}
+
+float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time) {
+  #ifdef DEBUG
+    Serial.print("[INF]\tSR04 measuring median distance (");
+    Serial.print(samples);
+    Serial.print(" samples over ");
+    Serial.print(time);
+    Serial.println(" ms)");
+  #endif
+  float med, pause, value;
+  float *values;
+  values = new float[samples];
+  if(time/samples < 12) {
+  #ifdef DEBUG
+      Serial.println("[WARN]\tSamples to time ratio too low, setting to default.");
+  #endif
+    pause = 0;
+  } else {
+    pause = time/samples - 12;
+  }
+  for(int i=0; i<samples; i++) {
+    value = sr04(trig, echo, unit);
+    if(value != -1) {
+      values[i] = value;
+      delay(pause);
+    } else {
+      i--;
+    }
+  }
+  
+  med = median(values, samples);
+  delete [] values;
+  #ifdef DEBUG
+    Serial.print("[INF]\tSR04 calculated median distance: ");
+    Serial.print(med);
+    switch(unit) {
+      case MM:
+        Serial.println(" mm");
+        break;
+      case CM:
+        Serial.println(" cm");
+        break;
+      case M:
+        Serial.println(" m");
+        break;
+    }
+  #endif
+  return(med);
 }
 
 int AP_Utils::pulseLength(int deg) {
@@ -261,4 +317,21 @@ void AP_Utils::legStretch(uint8_t leg, bool smooth) {
   delay(50);
   legDown(leg, smooth);
   delay(50);
+}
+
+float AP_Utils::median(float *values, int numValues) {
+  for(int i=0; i<(numValues-1); i++) {
+    for(int j=i; j<(numValues-i-1); j++)  {
+      if(values[j+1] < values[j]) {
+        float swap = values[j];
+        values[j] = values[j+1];
+        values[j+1] = swap;
+      }
+    }
+  }
+  
+  if(numValues%2 == 0) {
+    return((values[numValues/2-1]+values[numValues/2])/2.0);
+  }
+  return(values[numValues/2]);
 }
