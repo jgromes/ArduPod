@@ -1,4 +1,5 @@
-AP_Utils	KEYWORD1
-reset		KEYWORD2
-stretchAll	KEYWORD2
-move		KEYWORD2
+AP_Utils    KEYWORD1
+reset       KEYWORD2
+stretchAll  KEYWORD2
+moveServo   KEYWORD2
+walk        KEYWORD2
