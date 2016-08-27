@@ -59,7 +59,7 @@ void AP_Utils::stretchAll(void) {
   }
 }
 
-void AP_Utils::walk(int dir) {
+void AP_Utils::walk(float dir, float distance) {
   
 }
 

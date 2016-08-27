@@ -42,17 +42,18 @@ class AP_Utils {
  public:
   AP_Utils(void);
   void begin(void);
-  Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+  
   servo servos[16];
   void moveServo(uint8_t servo, int deg, bool smooth, float speed);
   void reset(void);
   void stretchAll(void);
-  void walk(int dir);
+  void walk(float dir, float distance);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
   float sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time);
   float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
  private:
+  Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
   
