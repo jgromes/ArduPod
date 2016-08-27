@@ -44,7 +44,7 @@ class AP_Utils {
   void begin(void);
   Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
   servo servos[16];
-  void moveServo(uint8_t servo, int deg, bool smooth);
+  void moveServo(uint8_t servo, int deg, bool smooth, float speed);
   void reset(void);
   void stretchAll(void);
   void walk(int dir);

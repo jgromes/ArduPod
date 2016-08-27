@@ -16,24 +16,24 @@ void AP_Utils::begin(void) {
     }
   }
   #ifdef DEBUG
-    Serial.print("\n[INF]\tStarting PWM ... ");
+    Serial.print("\n[INF]\t[SETUP]\tStarting PWM ... ");
   #endif
   pwm.begin();
   #ifdef DEBUG
     Serial.println("Done!");
-    Serial.print("[INF]\tSetting PWM frequency to ");
+    Serial.print("[INF]\t[SETUP]\tSetting PWM frequency to ");
     Serial.print(PWM_FREQ);
     Serial.print(" Hz ... ");
   #endif
   pwm.setPWMFreq(PWM_FREQ);
   #ifdef DEBUG
     Serial.println("Done!");
-    Serial.print("[INF]\tSetting all servos to default position ... ");
+    Serial.print("[INF]\t[SETUP]\tSetting all servos to default position ... ");
   #endif
   reset();
   #ifdef DEBUG
     Serial.println("Done!");
-    Serial.println("[INF]\tSuccesfully started!");
+    Serial.println("[INF]\t[SETUP]\tSuccesfully started!");
   #endif
 }
 
@@ -42,6 +42,7 @@ void AP_Utils::reset(void) {
     pwm.setPWM(i, 0, pulseLength(90));
     servos[i].position = 90;
   }
+  servos[15].position = 0;
 }
 
 void AP_Utils::stretchAll(void) {
@@ -79,7 +80,7 @@ float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
   
   if((distance >= 0.02*unit) && (distance <= 4*unit)) {
     #ifdef DEBUG
-      Serial.print("[INF]\tSR04 distance: ");
+      Serial.print("[INF]\t[SR04]\tDistance: ");
       Serial.print(distance);
       switch(unit) {
         case MM:
@@ -96,7 +97,7 @@ float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
     return(distance);
   } else {
     #ifdef DEBUG
-      Serial.print("[ERROR]\tSR04 distance ");
+      Serial.print("[ERROR]\t[SR04]\tDistance ");
       Serial.print(distance);
       switch(unit) {
         case MM:
@@ -117,7 +118,8 @@ float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
 
 float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time) {
   #ifdef DEBUG
-    Serial.print("[INF]\tSR04 measuring average distance (");
+    unsigned long timer = micros();
+    Serial.print("[INF]\t[SR04]\tMeasuring average distance (");
     Serial.print(samples);
     Serial.print(" samples over ");
     Serial.print(time);
@@ -125,9 +127,9 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
   #endif
   float average, pause, value;
   float total = 0;
-  if(time/samples < 12) {
+  if(time/samples <= 12) {
   #ifdef DEBUG
-      Serial.println("[WARN]\tSamples to time ratio too low, setting to default.");
+      Serial.println("[WARN]\t[SR04]\tSamples to time ratio too low, setting to default.");
   #endif
     pause = 0;
   } else {
@@ -144,7 +146,7 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
   }
   average = total/samples;
   #ifdef DEBUG
-    Serial.print("[INF]\tSR04 calculated average distance: ");
+    Serial.print("[INF]\t[SR04]\tCalculated average distance: ");
     Serial.print(average);
     switch(unit) {
       case MM:
@@ -157,13 +159,17 @@ float AP_Utils::sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, 
         Serial.println(" m");
         break;
     }
+    Serial.print("[INF]\t[SR04]\tSampling took ");
+    Serial.print((micros()-timer)/1000);
+    Serial.println(" ms.");
   #endif
   return average;
 }
 
 float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time) {
   #ifdef DEBUG
-    Serial.print("[INF]\tSR04 measuring median distance (");
+    unsigned long timer = micros();
+    Serial.print("[INF]\t[SR04]\tMeasuring median distance (");
     Serial.print(samples);
     Serial.print(" samples over ");
     Serial.print(time);
@@ -174,7 +180,7 @@ float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, i
   values = new float[samples];
   if(time/samples < 12) {
   #ifdef DEBUG
-      Serial.println("[WARN]\tSamples to time ratio too low, setting to default.");
+      Serial.println("[WARN]\t[SR04]\tSamples to time ratio too low, setting to default.");
   #endif
     pause = 0;
   } else {
@@ -193,7 +199,7 @@ float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, i
   med = median(values, samples);
   delete [] values;
   #ifdef DEBUG
-    Serial.print("[INF]\tSR04 calculated median distance: ");
+    Serial.print("[INF]\t[SR04]\tCalculated median distance: ");
     Serial.print(med);
     switch(unit) {
       case MM:
@@ -206,6 +212,9 @@ float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, i
         Serial.println(" m");
         break;
     }
+    Serial.print("[INF]\t[SR04]\tSampling took ");
+    Serial.print((micros()-timer)/1000);
+    Serial.println(" ms.");
   #endif
   return(med);
 }
@@ -222,9 +231,9 @@ void AP_Utils::pwmove(uint8_t i, int deg) {
 
 void AP_Utils::legUp(uint8_t leg, bool smooth) {
   uint8_t servo = vertical[leg];
-  moveServo(servo, pulseLength(VERT_MAX), smooth);
+  //moveServo(servo, pulseLength(VERT_MAX), smooth);
   #ifdef DEBUG
-    Serial.print("[INF]\tLeg #");
+    Serial.print("[INF]\t[PWM]\tLeg #");
     Serial.print(leg);
     Serial.print(" up ");
     if(smooth) {
@@ -237,9 +246,9 @@ void AP_Utils::legUp(uint8_t leg, bool smooth) {
 
 void AP_Utils::legDown(uint8_t leg, bool smooth) {
   uint8_t servo = vertical[leg];
-  moveServo(servo, pulseLength(VERT_MIN), smooth);
+  //moveServo(servo, pulseLength(VERT_MIN), smooth);
   #ifdef DEBUG
-    Serial.print("[INF]\tLeg #");
+    Serial.print("[INF]\t[PWM]\tLeg #");
     Serial.print(leg);
     Serial.print(" down ");
     if(smooth) {
@@ -250,10 +259,10 @@ void AP_Utils::legDown(uint8_t leg, bool smooth) {
   #endif
 }
 
-void AP_Utils::moveServo(uint8_t number, int deg, bool smooth) {
-  servo moving = servos[number];
+void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
+  //servo moving = servos[number];
   if(smooth) {
-    if(moving.type == HORIZONTAL) {
+    /*if(moving.type == HORIZONTAL) {
       if(moving.position > deg) {
         for(int i=moving.position; i<=deg; i++) {
           pwm.setPWM(moving.number, 0, pulseLength(i));
@@ -277,19 +286,72 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth) {
           delay((cos(i*(PI/90)) + 1)*5);
         }
       }
+    }*/
+    /*Serial.print("deg: ");
+    Serial.println(deg);
+    Serial.print("m.p: ");
+    Serial.println(servos[number].position);*/
+    if(servos[number].position > deg) {
+      //float radAverage = ((servos[number].position + deg)/2.0)*(PI/180.0);
+      float radCoef = (servos[number].position - deg)*(PI/180.0);
+      float radOffset = (deg + (servos[number].position - deg)/2.0)*(PI/180.0);
+      /*Serial.print("Average: ");
+      Serial.println(radAverage*(180.0/PI));
+      Serial.print("Coef: ");
+      Serial.println(radCoef*(180.0/PI));*/
+      //Serial.println(radAverage);
+      //Serial.println(radCoef);
+      for(int i=servos[number].position; i>=deg; i--) {
+        pwm.setPWM(servos[number].number, 0, pulseLength(i));
+        //Serial.print(i);
+        //Serial.print(' ');
+        //float pause = (cos((float)i*(PI/90.0)) + 1.0)*((float)abs(deg-90)/45.0);
+        //float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef + radAverage + (PI/2.0))+1.0)*speed;
+        float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef - PI) + 1.0)*speed;
+        //Serial.println(pause);
+        delayMicroseconds(pause*1000.0);
+      }
+      //Serial.print('\n');
+    } else if(servos[number].position < deg) {
+      //float radAverage = ((servos[number].position + deg)/2.0)*(PI/180.0);
+      float radCoef = (deg - servos[number].position)*(PI/180.0);
+      /*Serial.print("Average: ");
+      Serial.println(radAverage*(180.0/PI));
+      Serial.print("Coef: ");
+      Serial.println(radCoef*(180.0/PI));*/
+      //Serial.println(radAverage);
+      //Serial.println(radCoef);
+      for(int i=servos[number].position; i<=deg; i++) {
+        pwm.setPWM(servos[number].number, 0, pulseLength(i));
+        //Serial.print(i);
+        //Serial.print(' ');
+        //delay((cos(i*(PI/90)) + 1)*(abs(deg-90)/30));
+        //float pause = (cos((float)i*(PI/90.0)) + 1.0)*((float)abs(deg-90)/45.0);
+        //float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef + radAverage + (PI/2.0))+1.0)*speed;
+        float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef - PI) + 1.0)*speed;
+        //Serial.println(pause);
+        delayMicroseconds(pause*1000.0);
+      }
+      //Serial.print('\n');
     }
+    
+    servos[number].position = deg;
+    /*Serial.print("deg: ");
+    Serial.println(deg);
+    Serial.print("m.p: ");
+    Serial.println(servos[number].position);*/
   } else {
     pwmove(number, deg);
   }
   #ifdef DEBUG
     int bound = -1;
-    if(moving.type == HORIZONTAL) {
+    if(servos[number].type == HORIZONTAL) {
       if(deg > HORIZ_MAX) {
         bound = HORIZ_MAX;
       } else if(deg < HORIZ_MIN) {
         bound = HORIZ_MIN;
       }
-    } else if(moving.type == VERTICAL) {
+    } else if(servos[number].type == VERTICAL) {
       if(deg > VERT_MAX) {
         bound = VERT_MAX;
       } else if(deg < VERT_MIN) {
@@ -297,15 +359,15 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth) {
       }
     }
     if(bound != -1) {
-      Serial.print("[ERROR]\tServo #");
-      Serial.print(moving.number);
+      Serial.print("[ERROR]\t[PWM]\tServo #");
+      Serial.print(servos[number].number);
       Serial.println(" out of bounds!");
 
-      Serial.print("     Command sent : ");
+      Serial.print("\t\tCommand sent : ");
       Serial.print(deg);
       Serial.println(" deg");
 
-      Serial.print("     Current bound: ");
+      Serial.print("\t\tCurrent bound: ");
       Serial.print(bound);
       Serial.println(" deg");
     }
@@ -321,7 +383,7 @@ void AP_Utils::legStretch(uint8_t leg, bool smooth) {
 
 float AP_Utils::median(float *values, int numValues) {
   for(int i=0; i<(numValues-1); i++) {
-    for(int j=i; j<(numValues-i-1); j++)  {
+    for(int j=0; j<(numValues-i-1); j++) {
       if(values[j+1] < values[j]) {
         float swap = values[j];
         values[j] = values[j+1];
@@ -329,6 +391,12 @@ float AP_Utils::median(float *values, int numValues) {
       }
     }
   }
+  
+  /*for(int i=0; i<numValues; i++) {
+    Serial.print(values[i]);
+    Serial.print(' ');
+  }
+  Serial.print('\n');*/
   
   if(numValues%2 == 0) {
     return((values[numValues/2-1]+values[numValues/2])/2.0);
