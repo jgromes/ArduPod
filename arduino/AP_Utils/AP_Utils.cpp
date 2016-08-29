@@ -292,43 +292,23 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
     Serial.print("m.p: ");
     Serial.println(servos[number].position);*/
     if(servos[number].position > deg) {
-      //float radAverage = ((servos[number].position + deg)/2.0)*(PI/180.0);
-      float radCoef = (servos[number].position - deg)*(PI/180.0);
-      float radOffset = (deg + (servos[number].position - deg)/2.0)*(PI/180.0);
-      /*Serial.print("Average: ");
-      Serial.println(radAverage*(180.0/PI));
-      Serial.print("Coef: ");
-      Serial.println(radCoef*(180.0/PI));*/
-      //Serial.println(radAverage);
-      //Serial.println(radCoef);
+      float range = (servos[number].position - deg)*(PI/180.0);
       for(int i=servos[number].position; i>=deg; i--) {
         pwm.setPWM(servos[number].number, 0, pulseLength(i));
         //Serial.print(i);
         //Serial.print(' ');
-        //float pause = (cos((float)i*(PI/90.0)) + 1.0)*((float)abs(deg-90)/45.0);
-        //float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef + radAverage + (PI/2.0))+1.0)*speed;
-        float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef - PI) + 1.0)*speed;
+	float pause = (cos(((2.0*PI)/range)*(i-deg))+1.0)*speed;
         //Serial.println(pause);
         delayMicroseconds(pause*1000.0);
       }
       //Serial.print('\n');
     } else if(servos[number].position < deg) {
-      //float radAverage = ((servos[number].position + deg)/2.0)*(PI/180.0);
-      float radCoef = (deg - servos[number].position)*(PI/180.0);
-      /*Serial.print("Average: ");
-      Serial.println(radAverage*(180.0/PI));
-      Serial.print("Coef: ");
-      Serial.println(radCoef*(180.0/PI));*/
-      //Serial.println(radAverage);
-      //Serial.println(radCoef);
+      float range = (deg - servos[number].position)*(PI/180.0);
       for(int i=servos[number].position; i<=deg; i++) {
         pwm.setPWM(servos[number].number, 0, pulseLength(i));
         //Serial.print(i);
         //Serial.print(' ');
-        //delay((cos(i*(PI/90)) + 1)*(abs(deg-90)/30));
-        //float pause = (cos((float)i*(PI/90.0)) + 1.0)*((float)abs(deg-90)/45.0);
-        //float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef + radAverage + (PI/2.0))+1.0)*speed;
-        float pause = (cos((float)i*(PI/180.0)*((2.0*PI)/radCoef) - (pow(PI, 2.0))/radCoef - PI) + 1.0)*speed;
+	float pause = (cos(((2.0*PI)/range)*(i-servos[number].position))+1.0)*speed;
         //Serial.println(pause);
         delayMicroseconds(pause*1000.0);
       }
