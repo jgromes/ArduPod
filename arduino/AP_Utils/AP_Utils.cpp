@@ -260,33 +260,7 @@ void AP_Utils::legDown(uint8_t leg, bool smooth) {
 }
 
 void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
-  //servo moving = servos[number];
   if(smooth) {
-    /*if(moving.type == HORIZONTAL) {
-      if(moving.position > deg) {
-        for(int i=moving.position; i<=deg; i++) {
-          pwm.setPWM(moving.number, 0, pulseLength(i));
-          delay((cos(i*(PI/90)) + 1)*5);
-        }
-      } else if(moving.position < deg) {
-        for(int i=moving.position; i>=deg; i--) {
-          pwm.setPWM(moving.position, 0, pulseLength(i));
-          delay((cos(i*(PI/90)) + 1)*5);
-        }
-      }
-    } else if(moving.type == VERTICAL) {
-      if(moving.position > deg) {
-        for(int i=moving.position; i<=deg; i++) {
-          pwm.setPWM(moving.number, 0, pulseLength(i));
-          delay((cos(i*(PI/90)) + 1)*5);
-        }
-      } else if(moving.position < deg) {
-        for(int i=moving.position; i>=deg; i--) {
-          pwm.setPWM(moving.number, 0, pulseLength(i));
-          delay((cos(i*(PI/90)) + 1)*5);
-        }
-      }
-    }*/
     /*Serial.print("deg: ");
     Serial.println(deg);
     Serial.print("m.p: ");
