@@ -44,7 +44,7 @@ class AP_Utils {
   void begin(void);
   
   servo servos[16];
-  void moveServo(uint8_t servo, int deg, bool smooth, float speed);
+  void moveServo(uint8_t servo, int deg, bool smooth, float speed = 2.0);
   void reset(void);
   void stretchAll(void);
   void walk(float dir, float distance);

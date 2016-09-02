@@ -259,7 +259,7 @@ void AP_Utils::legDown(uint8_t leg, bool smooth) {
   #endif
 }
 
-void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed = 2.0) {
+void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
   if(smooth) {
     float range = abs(servos[number].position - deg);
     if(servos[number].position > deg) {
@@ -267,18 +267,18 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed = 2.0
         pwm.setPWM(servos[number].number, 0, pulseLength(i));
         float pause = (cos(((2.0*PI)/range)*(i-deg))+1.0)*speed;
         delayMicroseconds(pause*1000.0);
-        /*Serial.print(i);
-        Serial.print(' ');
-        Serial.println(pause);*/
+        #ifdef DEBUG
+          Serial.println(pause);
+        #endif
       }
     } else if(servos[number].position < deg) {
       for(int i=servos[number].position; i<=deg; i++) {
         pwm.setPWM(servos[number].number, 0, pulseLength(i));
         float pause = (cos(((2.0*PI)/range)*(i-servos[number].position))+1.0)*speed;
         delayMicroseconds(pause*1000.0);
-        /*Serial.print(i);
-        Serial.print(' ');
-        Serial.println(pause);*/
+        #ifdef DEBUG
+          Serial.println(pause);
+        #endif
       }
     }
     servos[number].position = deg;
