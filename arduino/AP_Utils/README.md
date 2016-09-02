@@ -21,7 +21,7 @@ This library allows even less Arduino-experienced users to program their ArduPod
 
 * `moveServo(uint8_t servo, int deg. bool smooth, float speed)`
 
-  Move servo number `servo` (numbering consistent with Adafruit PWM Shield from 0 to 15) to position `deg` (where 0 and 180 degrees are the servos physical boundaries). If `smooth` is set to `True` then the movement will be smooth. The `speed` attribute is the speed at which the servo will move, with higher value meaning slower movement. The value for this can vary for each servo type, most common values are from 2.0 to 5.0. (WIP)
+  Move servo number `servo` (numbering consistent with Adafruit PWM Shield from 0 to 15) to position `deg` (where 0 and 180 degrees are the servos physical boundaries). If `smooth` is set to `True` then the movement will be smooth. The `speed` arguement is optional and defines the speed at which the servo will move, with higher value meaning slower movement. The default value is 2. The value for this can vary for each servo type, most common values are from 2.0 to 5.0.
 
 
 * `reset(void)`
