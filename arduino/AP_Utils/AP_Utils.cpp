@@ -4,7 +4,7 @@ AP_Utils::AP_Utils(void) {
   
 }
 
-void AP_Utils::begin(void) {
+void AP_Utils::begin(int *offsets) {
   for(int i=0; i<16; i++) {
     servos[i].number = i;
     if((i % 2 == 0)&&(i<12)) {
@@ -16,6 +16,17 @@ void AP_Utils::begin(void) {
     }
   }
   #ifdef DEBUG
+    Serial.println("\n[WARN]\t\tDebug mode is active, servos will probably move slowly and time-related functions might not work as intended!");
+    Serial.println("\t\tTo disable debug mode, comment out line 12 in AP_Utils.h");
+    Serial.print("\t\tResuming setup in ");
+    for(int i=10; i>0; i--) {
+      Serial.print(i);
+      delay(250);
+      for(int j=0; j<3; j++) {
+        Serial.print('.');
+        delay(250);
+      }
+    }
     Serial.print("\n[INF]\t[SETUP]\tStarting PWM ... ");
   #endif
   pwm.begin();
@@ -30,37 +41,145 @@ void AP_Utils::begin(void) {
     Serial.println("Done!");
     Serial.print("[INF]\t[SETUP]\tSetting all servos to default position ... ");
   #endif
-  reset();
+  reset(offsets);
   #ifdef DEBUG
     Serial.println("Done!");
     Serial.println("[INF]\t[SETUP]\tSuccesfully started!");
   #endif
 }
 
-void AP_Utils::reset(void) {
-  for(int i=0; i<16; i++) {
-    pwm.setPWM(i, 0, pulseLength(90));
-    servos[i].position = 90;
+void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
+  int bound = -1;
+  if(servos[number].type == HORIZONTAL) {
+    if(deg > HORIZ_MAX) {
+      bound = HORIZ_MAX;
+    } else if(deg < HORIZ_MIN) {
+      bound = HORIZ_MIN;
+    }
+  } else if(servos[number].type == VERTICAL) {
+    if(deg > VERT_MAX) {
+      bound = VERT_MAX;
+    } else if(deg < VERT_MIN) {
+      bound = VERT_MIN;
+    }
   }
-  servos[15].position = 0;
-}
-
-void AP_Utils::stretchAll(void) {
-  for(int i=0; i<2; i++) {
-    legStretch(0, true);
-    legStretch(2, true);
-    legStretch(4, true);
-    delay(DELAY);
-
-    legStretch(1, true);
-    legStretch(3, true);
-    legStretch(5, true);
-    delay(DELAY);
-  }
-}
-
-void AP_Utils::walk(float dir, float distance) {
   
+  if(bound == -1) {
+    if(smooth) {
+      float range = abs(servos[number].position - deg);
+      if(servos[number].position > deg) {
+        for(int i=servos[number].position; i>=deg; i--) {
+          pwm.setPWM(servos[number].number, 0, pulseLength(i));
+          float pause = (cos(((2.0*PI)/range)*(i-deg))+1.0)*speed;
+          delayMicroseconds(pause*1000.0);
+          //Serial.println(pause);
+        }
+      } else if(servos[number].position < deg) {
+        for(int i=servos[number].position; i<=deg; i++) {
+          pwm.setPWM(servos[number].number, 0, pulseLength(i));
+          float pause = (cos(((2.0*PI)/range)*(i-servos[number].position))+1.0)*speed;
+          delayMicroseconds(pause*1000.0);
+          //Serial.println(pause);
+        }
+      }
+      servos[number].position = deg;
+    } else {
+      pwmove(number, deg);
+    }
+  } else {
+    #ifdef DEBUG
+      Serial.print("[ERROR]\t[PWM]\tServo #");
+      Serial.print(servos[number].number);
+      Serial.println(" out of bounds!");
+
+      Serial.print("\t\tCommand sent : ");
+      Serial.print(deg);
+      Serial.println(" deg");
+
+      Serial.print("\t\tCurrent bound: ");
+      Serial.print(bound);
+      Serial.println(" deg");
+    #endif
+  }
+}
+
+pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution) {
+  pointLeg* path = new pointLeg[resolution];
+  float stepPhi = (phi-legs[leg].phi)/(float)(resolution-1);
+  float stepZ = (z-legs[leg].z)/(float)(resolution-1);
+  for(int i=0; i<resolution; i++) {
+    path[i].phi = stepPhi*(float)i + legs[leg].phi;
+    path[i].z = stepZ*(float)i + legs[leg].z;
+  }
+  legs[leg].phi = phi;
+  legs[leg].z = z;
+  return path;
+}
+
+//TODO: remove numLegs parameter (no idea how, other than std::vector)
+void AP_Utils::setLegs(pointLeg *legs, uint8_t *numLegs, uint8_t total, bool smooth, float speed) {
+  int resolution = 50;
+  pointLeg paths[total][resolution];
+  uint8_t toMove[total];
+  for(int i=0; i<total; i++) {
+    toMove[i] = *(numLegs+i);
+    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution);
+    for(int j=0; j<resolution; j++) {
+      paths[i][j] = *(tmp+j);
+    }
+    delete[] tmp;
+  }
+  
+  #ifdef DEBUG
+    for(int i=0; i<total; i++) {
+      Serial.print("[INF]\t[LEG ");
+      Serial.print(toMove[i]);
+      Serial.print("]\tPhi:\t(raw)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(paths[i][j].phi, 3);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\t\t(deg)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(40.0*paths[i][j].phi + 90.0);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\tZ:\t(raw)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(paths[i][j].z, 3);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\t\t(deg)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(40.0*paths[i][j].z + 90.0);
+        Serial.print('\t');
+      }
+      Serial.println();
+    }
+  #endif
+  
+  for(int j=0; j<resolution; j++) {
+    for(int i=0; i<total; i++) {
+      pwmove(horizontal[toMove[i]], 40.0*paths[i][j].phi + 90.0);
+      pwmove(vertical[toMove[i]], 40.0*paths[i][j].z + 90.0);
+    }
+  }
+}
+
+void AP_Utils::reset(int *offsets) {
+  for(int i=0; i<16; i++) {
+    pwmove(i, 90+offsets[i]);
+  }
+  delay(DELAY);
+  
+  body.x = 0;
+  body.y = 0;
+  body.z = 0;
+  
+  for(int i=0; i<6; i++) {
+    legs[i].phi = 0;
+    legs[i].z = 0;
+  }
 }
 
 float AP_Utils::sr04(uint8_t trig, uint8_t echo, int unit) {
@@ -226,12 +345,11 @@ int AP_Utils::pulseLength(int deg) {
 void AP_Utils::pwmove(uint8_t i, int deg) {
   pwm.setPWM(i, 0, pulseLength(deg));
   servos[i].position = deg;
-  delay(DELAY);
 }
 
-void AP_Utils::legUp(uint8_t leg, bool smooth) {
+void AP_Utils::legUp(uint8_t leg, bool smooth, float speed) {
   uint8_t servo = vertical[leg];
-  //moveServo(servo, pulseLength(VERT_MAX), smooth);
+  moveServo(servo, pulseLength(VERT_MAX), smooth, speed);
   #ifdef DEBUG
     Serial.print("[INF]\t[PWM]\tLeg #");
     Serial.print(leg);
@@ -244,9 +362,9 @@ void AP_Utils::legUp(uint8_t leg, bool smooth) {
   #endif
 }
 
-void AP_Utils::legDown(uint8_t leg, bool smooth) {
+void AP_Utils::legDown(uint8_t leg, bool smooth, float speed) {
   uint8_t servo = vertical[leg];
-  //moveServo(servo, pulseLength(VERT_MIN), smooth);
+  moveServo(servo, pulseLength(VERT_MIN), smooth, speed);
   #ifdef DEBUG
     Serial.print("[INF]\t[PWM]\tLeg #");
     Serial.print(leg);
@@ -259,70 +377,6 @@ void AP_Utils::legDown(uint8_t leg, bool smooth) {
   #endif
 }
 
-void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
-  if(smooth) {
-    float range = abs(servos[number].position - deg);
-    if(servos[number].position > deg) {
-      for(int i=servos[number].position; i>=deg; i--) {
-        pwm.setPWM(servos[number].number, 0, pulseLength(i));
-        float pause = (cos(((2.0*PI)/range)*(i-deg))+1.0)*speed;
-        delayMicroseconds(pause*1000.0);
-        #ifdef DEBUG
-          Serial.println(pause);
-        #endif
-      }
-    } else if(servos[number].position < deg) {
-      for(int i=servos[number].position; i<=deg; i++) {
-        pwm.setPWM(servos[number].number, 0, pulseLength(i));
-        float pause = (cos(((2.0*PI)/range)*(i-servos[number].position))+1.0)*speed;
-        delayMicroseconds(pause*1000.0);
-        #ifdef DEBUG
-          Serial.println(pause);
-        #endif
-      }
-    }
-    servos[number].position = deg;
-  } else {
-    pwmove(number, deg);
-  }
-  #ifdef DEBUG
-    int bound = -1;
-    if(servos[number].type == HORIZONTAL) {
-      if(deg > HORIZ_MAX) {
-        bound = HORIZ_MAX;
-      } else if(deg < HORIZ_MIN) {
-        bound = HORIZ_MIN;
-      }
-    } else if(servos[number].type == VERTICAL) {
-      if(deg > VERT_MAX) {
-        bound = VERT_MAX;
-      } else if(deg < VERT_MIN) {
-        bound = VERT_MIN;
-      }
-    }
-    if(bound != -1) {
-      Serial.print("[ERROR]\t[PWM]\tServo #");
-      Serial.print(servos[number].number);
-      Serial.println(" out of bounds!");
-
-      Serial.print("\t\tCommand sent : ");
-      Serial.print(deg);
-      Serial.println(" deg");
-
-      Serial.print("\t\tCurrent bound: ");
-      Serial.print(bound);
-      Serial.println(" deg");
-    }
-  #endif
-}
-
-void AP_Utils::legStretch(uint8_t leg, bool smooth) {
-  legUp(leg, smooth);
-  delay(50);
-  legDown(leg, smooth);
-  delay(50);
-}
-
 float AP_Utils::median(float *values, int numValues) {
   for(int i=0; i<(numValues-1); i++) {
     for(int j=0; j<(numValues-i-1); j++) {
@@ -333,12 +387,6 @@ float AP_Utils::median(float *values, int numValues) {
       }
     }
   }
-  
-  /*for(int i=0; i<numValues; i++) {
-    Serial.print(values[i]);
-    Serial.print(' ');
-  }
-  Serial.print('\n');*/
   
   if(numValues%2 == 0) {
     return((values[numValues/2-1]+values[numValues/2])/2.0);

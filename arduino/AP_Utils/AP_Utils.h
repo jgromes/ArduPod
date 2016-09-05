@@ -23,12 +23,12 @@
 #define VERTICAL    1
 #define SENSOR      2
 
-#define HORIZ_MAX   50
+#define HORIZ_MAX   130
 #define HORIZ_DEF   90
-#define HORIZ_MIN   130
-#define VERT_MAX    50 
+#define HORIZ_MIN   50
+#define VERT_MAX    130 
 #define VERT_DEF    90
-#define VERT_MIN    130
+#define VERT_MIN    50
 
 #define DELAY       100
 
@@ -38,30 +38,45 @@ struct servo {
   int position;
 };
 
+struct pointBody {
+  float x;
+  float y;
+  float z;
+};
+
+struct pointLeg {
+  float phi;
+  float z;
+};
+
 class AP_Utils {
  public:
   AP_Utils(void);
-  void begin(void);
+  void begin(int *offsets);
+  void reset(int *offsets);
   
-  servo servos[16];
-  void moveServo(uint8_t servo, int deg, bool smooth, float speed = 2.0);
-  void reset(void);
-  void stretchAll(void);
-  void walk(float dir, float distance);
+  void moveServo(uint8_t servo, int deg, bool smooth = true, float speed = 2.5);
+  
+  pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution);
+  void setLegs(pointLeg *legs, uint8_t *numLegs, uint8_t total, bool smooth = true, float speed = 2.5);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
   float sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time);
   float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
  private:
+  servo servos[16];
+  pointBody body;
+  pointLeg legs[6];
   Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
   
+  
   int pulseLength(int deg);
-  void legUp(uint8_t leg, bool smooth);
-  void legDown(uint8_t leg, bool smooth);
-  void legStretch(uint8_t leg, bool smooth);
   void pwmove(uint8_t i, int deg);
+  
+  void legUp(uint8_t leg, bool smooth = true, float speed = 2.5);
+  void legDown(uint8_t leg, bool smooth = true, float speed = 2.5);
   
   float median(float *values, int numValues);
 };
