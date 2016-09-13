@@ -30,21 +30,27 @@
 #define VERT_DEF    90
 #define VERT_MIN    50
 
-#define DELAY       100
-
 struct servo {
   uint8_t number;
   uint8_t type;
   int position;
 };
 
-struct pointBody {
+struct body {
   float x;
   float y;
   float z;
+  float facing;
 };
 
 struct pointLeg {
+  float phi;
+  float z;
+};
+
+struct leg {
+  uint8_t number;
+  bool move;
   float phi;
   float z;
 };
@@ -53,20 +59,24 @@ class AP_Utils {
  public:
   AP_Utils(void);
   void begin(int *offsets);
-  void reset(int *offsets);
+  void reset(void);
   
   void moveServo(uint8_t servo, int deg, bool smooth = true, float speed = 2.5);
-  
   pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution);
-  void setLegs(pointLeg *legs, uint8_t *numLegs, uint8_t total, bool smooth = true, float speed = 2.5);
+  void setLegs(leg *legs, bool smooth = true, float speed = 2.5);
+  void walk(float distance, int direction, float speed = 2.5);
+  void step(float length, float speed = 2.5);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
   float sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time);
   float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
+  
+  
  private:
+  int _offsets[16];
   servo servos[16];
-  pointBody body;
-  pointLeg legs[6];
+  body origin;
+  leg legs[6];
   Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
