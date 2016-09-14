@@ -9,9 +9,14 @@
 
 #include <Adafruit_PWMServoDriver.h>
 
-//#define DEBUG
+#define DEBUG
+
+#ifdef DEBUG
+  //#define VERBOSE
+#endif
 
 #define PWM_FREQ 60
+
 #define M  1
 #define CM 100
 #define MM 1000
@@ -62,8 +67,9 @@ class AP_Utils {
   void reset(void);
   
   void moveServo(uint8_t servo, int deg, bool smooth = true, float speed = 2.5);
-  pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution);
-  void setLegs(leg *legs, bool smooth = true, float speed = 2.5);
+  pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution, bool circular = true);
+  //void setLegs(leg *legs, bool smooth = true, float speed = 2.5, bool circular = true);
+  void setLegs(leg *legs, bool circular = true, float speed = 2.5);
   void walk(float distance, int direction, float speed = 2.5);
   void step(float length, float speed = 2.5);
   
@@ -81,13 +87,9 @@ class AP_Utils {
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
   
-  
   int pulseLength(int deg);
   void pwmove(uint8_t i, int deg);
-  
-  void legUp(uint8_t leg, bool smooth = true, float speed = 2.5);
-  void legDown(uint8_t leg, bool smooth = true, float speed = 2.5);
-  
+  int checkBounds(uint8_t number, int deg);
   float median(float *values, int numValues);
 };
 

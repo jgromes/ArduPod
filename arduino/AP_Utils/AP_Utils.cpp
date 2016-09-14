@@ -20,7 +20,7 @@ void AP_Utils::begin(int *offsets) {
     }
   }
   #ifdef DEBUG
-    Serial.println("\n[WARN]\t\tDebug mode is active, servos will probably move slowly and time-related functions might not work as intended!");
+    Serial.println("\n[WARN]\t[SETUP]\tDebug mode is active, servos will probably move slowly and time-related functions might not work as intended!");
     Serial.println("\t\tTo disable debug mode, comment out line 12 in AP_Utils.h");
     Serial.print("\t\tResuming setup in ");
     for(int i=10; i>0; i--) {
@@ -53,22 +53,7 @@ void AP_Utils::begin(int *offsets) {
 }
 
 void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
-  int bound = -1;
-  if(servos[number].type == HORIZONTAL) {
-    if(deg > HORIZ_MAX) {
-      bound = HORIZ_MAX;
-    } else if(deg < HORIZ_MIN) {
-      bound = HORIZ_MIN;
-    }
-  } else if(servos[number].type == VERTICAL) {
-    if(deg > VERT_MAX) {
-      bound = VERT_MAX;
-    } else if(deg < VERT_MIN) {
-      bound = VERT_MIN;
-    }
-  }
-  
-  if(bound == -1) {
+  if(checkBounds(number, deg) == -1) {
     if(smooth) {
       float range = abs(servos[number].position - deg);
       if(servos[number].position > deg) {
@@ -76,101 +61,100 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
           pwm.setPWM(servos[number].number, 0, pulseLength(i));
           float pause = (cos(((2.0*PI)/range)*(i-deg))+1.0)*speed;
           delayMicroseconds(pause*1000.0);
-          //Serial.println(pause);
         }
       } else if(servos[number].position < deg) {
         for(int i=servos[number].position; i<=deg; i++) {
           pwm.setPWM(servos[number].number, 0, pulseLength(i));
           float pause = (cos(((2.0*PI)/range)*(i-servos[number].position))+1.0)*speed;
           delayMicroseconds(pause*1000.0);
-          //Serial.println(pause);
         }
       }
       servos[number].position = deg;
     } else {
       pwmove(number, deg);
     }
-  } else {
-    #ifdef DEBUG
-      Serial.print("[ERROR]\t[PWM]\tServo #");
-      Serial.print(servos[number].number);
-      Serial.println(" out of bounds!");
-
-      Serial.print("\t\tCommand sent : ");
-      Serial.print(deg);
-      Serial.println(" deg");
-
-      Serial.print("\t\tCurrent bound: ");
-      Serial.print(bound);
-      Serial.println(" deg");
-    #endif
   }
 }
 
-pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution) {
+pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, bool circular) {
+  //TODO: do we need the next line?
   if((legs[leg].phi != phi)||(legs[leg].z != z)) {
     pointLeg* path = new pointLeg[resolution];
-    //Circular section parameters
-    float s = sqrt(pow(phi - legs[leg].phi, 2) + pow(z - legs[leg].z, 2));
-    float h = s/2.0; //TODO: adjust
-    float r = h/2.0 + pow(s, 2)/(8.0*h);
-    //linear function coefficients
-    float A = (legs[leg].z - z)/(legs[leg].phi - phi);
-    float B = legs[leg].z - A*legs[leg].phi;
-    //vector rotation
-    float m = sqrt(pow(r, 2) - pow(s/2.0, 2));
-    float phi0 = 0.5*(phi - legs[leg].phi) + (m/s)*(z - legs[leg].z) + legs[leg].phi;
-    float z0 = 0.5*(z - legs[leg].z) - (m/s)*(phi - legs[leg].phi) + legs[leg].z;
-    if(z0 > (A*phi0 + B)) {
-      phi0 = 0.5*(phi - legs[leg].phi) - (m/s)*(z - legs[leg].z) + legs[leg].phi;
-      z0 = 0.5*(z - legs[leg].z) + (m/s)*(phi - legs[leg].phi) + legs[leg].z;
-    }
-    
-    float u = sqrt(pow(legs[leg].phi - phi, 2) + pow(legs[leg].z - z, 2));
-    float theta = acos((pow(u, 2) - 2.0*pow(r, 2))/(-2.0*pow(r, 2)));
-    
-    float v = sqrt(pow(phi - phi0 - 1.0, 2) + pow(z - z0, 2));
-    float delta;
-    if(phi > 0) {
-      delta = acos((pow(v, 2) - pow(r, 2) - 1.0)/(-2.0*r));
-    } else {
-      delta = acos((pow(v, 2) - pow(r, 2) - 1.0)/(-2.0*r)) - theta;
-    }
-    float stepTheta = theta/(float)(resolution-1);
-    
-    /*Serial.print("s:\t"); Serial.println(s, 6);
-    Serial.print("h:\t"); Serial.println(h, 6);
-    Serial.print("r:\t"); Serial.println(r, 6);
-    Serial.print("A:\t"); Serial.println(A, 6);
-    Serial.print("B:\t"); Serial.println(B, 6);
-    Serial.print("phi0:\t"); Serial.println(phi0, 6);
-    Serial.print("z0:\t"); Serial.println(z0, 6);
-    Serial.print("v:\t"); Serial.println(v, 6);
-    Serial.print("u:\t"); Serial.println(u, 6);
-    Serial.print("delta:\t"); Serial.println(delta*(180.0/PI));
-    Serial.print("theta:\t"); Serial.println(theta*(180.0/PI));*/
-    
-    if(phi > legs[leg].phi) {
-      int j = 0;
-      for(int i=resolution-1; i>=0; i--) {
-        path[i].phi = phi0 + r*cos(stepTheta*(float)j + delta);
-        path[i].z = z0 + r*sin(stepTheta*(float)j + delta);
-        j++;
+    if(circular) {
+      //Circular section parameters
+      float s = sqrt(pow(phi - legs[leg].phi, 2) + pow(z - legs[leg].z, 2));
+      float h = s/2.0; //TODO: adjust
+      float r = h/2.0 + pow(s, 2)/(8.0*h);
+      //linear function coefficients
+      float A = (legs[leg].z - z)/(legs[leg].phi - phi);
+      float B = legs[leg].z - A*legs[leg].phi;
+      //vector rotation
+      float m = sqrt(pow(r, 2) - pow(s/2.0, 2));
+      float phi0 = 0.5*(phi - legs[leg].phi) + (m/s)*(z - legs[leg].z) + legs[leg].phi;
+      float z0 = 0.5*(z - legs[leg].z) - (m/s)*(phi - legs[leg].phi) + legs[leg].z;
+      if(z0 > (A*phi0 + B)) {
+        phi0 = 0.5*(phi - legs[leg].phi) - (m/s)*(z - legs[leg].z) + legs[leg].phi;
+        z0 = 0.5*(z - legs[leg].z) + (m/s)*(phi - legs[leg].phi) + legs[leg].z;
       }
-    } else if(phi == legs[leg].phi) {
-      //TODO: vertical directions
+      
+      float u = sqrt(pow(legs[leg].phi - phi, 2) + pow(legs[leg].z - z, 2));
+      float theta = acos((pow(u, 2) - 2.0*pow(r, 2))/(-2.0*pow(r, 2)));
+      
+      float v = sqrt(pow(phi - phi0 - 1.0, 2) + pow(z - z0, 2));
+      float delta;
+      if(phi > 0) {
+        delta = acos((pow(v, 2) - pow(r, 2) - 1.0)/(-2.0*r));
+      } else {
+        delta = acos((pow(v, 2) - pow(r, 2) - 1.0)/(-2.0*r)) - theta;
+      }
+      float stepTheta = theta/(float)(resolution-1);
+      
+      #ifdef DEBUG
+        Serial.println("[INF]\t[TRACE]\tTracing leg #" + (String)leg + " from [" + (String)legs[leg].phi + "; " + (String)legs[leg].z + "] to [" + (String)phi + "; " + (String)z + "] (circular trace)");
+        Serial.println("\t\tTrace parameters:\ts\th\tr\tA\tB\tphi0\tz0\tv\tu\tdelta\ttheta");
+        Serial.println("\t\t\t\t\t" + (String)s + "\t" + (String)h + "\t" + (String)r + "\t" + (String)A + "\t" + (String)B + "\t" + (String)phi0 + "\t" + (String)z0 + "\t" + (String)v + "\t" + (String)u + "\t" + (String)(delta*(180.0/PI)) + "\t" + (String)(theta*(180.0/PI)));
+      #endif
+      
+      if(phi > legs[leg].phi) {
+        int j = 0;
+        for(int i=resolution-1; i>=0; i--) {
+          path[i].phi = phi0 + r*cos(stepTheta*(float)j + delta);
+          path[i].z = z0 + r*sin(stepTheta*(float)j + delta);
+          j++;
+        }
+      } else if(phi == legs[leg].phi) {
+        //TODO: vertical directions?
+      } else {
+        for(int i=0; i<resolution; i++) {
+          path[i].phi = phi0 + r*cos(stepTheta*(float)i + delta);
+          path[i].z = z0 + r*sin(stepTheta*(float)i + delta);
+        }
+      }
     } else {
+      #ifdef DEBUG
+        Serial.println("[INF]\t[TRACE]\tTracing leg #" + (String)leg + " from [" + (String)legs[leg].phi + "; " + (String)legs[leg].z + "] to [" + (String)phi + "; " + (String)z + "] (linear trace)");
+      #endif
+      
+      float stepPhi = (phi-legs[leg].phi)/(float)(resolution-1);
+      float stepZ = (z-legs[leg].z)/(float)(resolution-1);
       for(int i=0; i<resolution; i++) {
-        path[i].phi = phi0 + r*cos(stepTheta*(float)i + delta);
-        path[i].z = z0 + r*sin(stepTheta*(float)i + delta);
+          path[i].phi = stepPhi*(float)i + legs[leg].phi;
+          path[i].z = stepZ*(float)i + legs[leg].z;
       }
     }
-    
-    /*for(int i=0; i<resolution; i++) {
-      Serial.print(path[i].phi, 6);
-      Serial.print('\t');
-      Serial.println(path[i].z, 6);
-    }*/
+    #ifdef VERBOSE
+      Serial.print("\n\t\tPhi trace:\t\t");
+      for(int i=0; i<resolution; i++) {
+        Serial.print(path[i].phi);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\tZ trace:\t\t");
+      for(int i=0; i<resolution; i++) {
+        Serial.print(path[i].z);
+        Serial.print('\t');
+      }
+      Serial.print("\n\n");
+    #endif
     
     legs[leg].phi = phi;
     legs[leg].z = z;
@@ -181,7 +165,8 @@ pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution) {
   }
 }
 
-void AP_Utils::setLegs(leg *legs, bool smooth, float speed) {
+//void AP_Utils::setLegs(leg *legs, bool smooth, float speed, bool circular) {
+void AP_Utils::setLegs(leg *legs, bool circular = true, float speed = 2.5) {
   int resolution = 50;
   uint8_t total = 0;
   uint8_t toMove[6] = {255, 255, 255, 255, 255, 255};
@@ -194,14 +179,14 @@ void AP_Utils::setLegs(leg *legs, bool smooth, float speed) {
   
   pointLeg paths[total][resolution];
   for(int i=0; i<total; i++) {
-    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution);
+    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution, circular);
     for(int j=0; j<resolution; j++) {
       paths[i][j] = *(tmp+j);
     }
     delete[] tmp;
   }
   
-  #ifdef DEBUG
+  /*#ifdef DEBUG
     for(int i=0; i<total; i++) {
       Serial.print("[INF]\t[LEG ");
       Serial.print(toMove[i]);
@@ -227,7 +212,7 @@ void AP_Utils::setLegs(leg *legs, bool smooth, float speed) {
       }
       Serial.println();
     }
-  #endif
+  #endif*/
   
   for(int j=0; j<resolution; j++) {
     for(int i=0; i<total; i++) {
@@ -458,34 +443,37 @@ void AP_Utils::pwmove(uint8_t i, int deg) {
   servos[i].position = deg;
 }
 
-void AP_Utils::legUp(uint8_t leg, bool smooth, float speed) {
-  uint8_t servo = vertical[leg];
-  moveServo(servo, pulseLength(VERT_MAX), smooth, speed);
-  #ifdef DEBUG
-    Serial.print("[INF]\t[PWM]\tLeg #");
-    Serial.print(leg);
-    Serial.print(" up ");
-    if(smooth) {
-      Serial.println("(smooth)");
-    } else {
-      Serial.println();
+int AP_Utils::checkBounds(uint8_t number, int deg) {
+  int bound = -1;
+  if(servos[number].type == HORIZONTAL) {
+    if(deg > HORIZ_MAX) {
+      bound = HORIZ_MAX;
+    } else if(deg < HORIZ_MIN) {
+      bound = HORIZ_MIN;
     }
-  #endif
-}
+  } else if(servos[number].type == VERTICAL) {
+    if(deg > VERT_MAX) {
+      bound = VERT_MAX;
+    } else if(deg < VERT_MIN) {
+      bound = VERT_MIN;
+    }
+  }
+  if(bound != -1) {
+    #ifdef DEBUG
+      Serial.print("[ERROR]\t[PWM]\tServo #");
+      Serial.print(servos[number].number);
+      Serial.println(" out of bounds!");
 
-void AP_Utils::legDown(uint8_t leg, bool smooth, float speed) {
-  uint8_t servo = vertical[leg];
-  moveServo(servo, pulseLength(VERT_MIN), smooth, speed);
-  #ifdef DEBUG
-    Serial.print("[INF]\t[PWM]\tLeg #");
-    Serial.print(leg);
-    Serial.print(" down ");
-    if(smooth) {
-      Serial.println("(smooth)");
-    } else {
-      Serial.println();
-    }
-  #endif
+      Serial.print("\t\tCommand sent : ");
+      Serial.print(deg);
+      Serial.println(" deg");
+
+      Serial.print("\t\tCurrent bound: ");
+      Serial.print(bound);
+      Serial.println(" deg");
+    #endif
+  }
+  return bound;
 }
 
 float AP_Utils::median(float *values, int numValues) {
