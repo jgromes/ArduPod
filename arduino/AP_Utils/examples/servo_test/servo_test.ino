@@ -21,7 +21,7 @@
 //be extremely careful when changing these, only in small incremets (about 10) at a time
 //too big change (100 and more) can cause your servos gears to break!
 #define SERVOMIN 150
-#define SERVOMAX 560
+#define SERVOMAX 530
 
 //create Adafruit PWM Servo Driver object to directly control the PWM outputs
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
@@ -33,29 +33,19 @@ void setup() {
 }
 
 void loop() {
-  //move first servo from middle to max position
-  for(int pulse=(SERVOMAX-SERVOMIN)/2; pulse<=SERVOMAX; pulse++) {
+  //move from max position to min
+  for(int pulse=SERVOMAX; pulse>=SERVOMIN; pulse--) {   
     pwm.setPWM(15, 0, pulse);
     Serial.println(pulse);
     delay(10);
   }
-  //wait 3 seconds to allow power to be unplugged
   delay(3000);
 
-  //move from min to max and back forever
-  while(true) {
-    for(int pulse=SERVOMAX; pulse>=SERVOMIN; pulse--) {   
-      pwm.setPWM(15, 0, pulse);
-      Serial.println(pulse);
-      delay(10);
-    }
-    delay(3000);
-
-    for(int pulse=SERVOMIN; pulse<=SERVOMAX; pulse++) {   
-      pwm.setPWM(15, 0, pulse);
-      Serial.println(pulse);
-      delay(10);
-    }
-    delay(3000);
+  //move from min position to max
+  for(int pulse=SERVOMIN; pulse<=SERVOMAX; pulse++) {   
+    pwm.setPWM(15, 0, pulse);
+    Serial.println(pulse);
+    delay(10);
   }
+  delay(3000);
 }
