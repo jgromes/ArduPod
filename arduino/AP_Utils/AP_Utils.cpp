@@ -76,11 +76,23 @@ void AP_Utils::moveServo(uint8_t number, int deg, bool smooth, float speed) {
   }
 }
 
-pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, bool circular) {
-  //TODO: do we need the next line?
+pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, uint8_t shape) {
   if((legs[leg].phi != phi)||(legs[leg].z != z)) {
     pointLeg* path = new pointLeg[resolution];
-    if(circular) {
+
+    if(shape == LINEAR) {
+      #ifdef DEBUG
+        Serial.println("[INF]\t[TRACE]\tTracing leg #" + (String)leg + " from [" + (String)legs[leg].phi + "; " + (String)legs[leg].z + "] to [" + (String)phi + "; " + (String)z + "] (linear trace)");
+      #endif
+      float stepPhi = (phi-legs[leg].phi)/(float)(resolution-1);
+      float stepZ = (z-legs[leg].z)/(float)(resolution-1);
+      for(int i=0; i<resolution; i++) {
+        path[i].phi = stepPhi*(float)i + legs[leg].phi;
+        path[i].z = stepZ*(float)i + legs[leg].z;
+      }
+    }
+      
+    if(shape == CIRCULAR) {
       //Circular section parameters
       float s = sqrt(pow(phi - legs[leg].phi, 2) + pow(z - legs[leg].z, 2));
       float h = s/2.0; //TODO: adjust
@@ -130,18 +142,56 @@ pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, bo
           path[i].z = z0 + r*sin(stepTheta*(float)i + delta);
         }
       }
-    } else {
+    }
+    
+    if(shape == ELLIPTIC) {
+      float phi0 = (legs[leg].phi + phi)/2.0;
+      float z0 = legs[leg].z;
+      float a = sqrt(pow(phi0 - legs[leg].phi, 2));
+      float b = 1.0 - z0;
+      
+      float theta, delta;
+      if(z == legs[leg].z) {
+        theta = PI;
+        delta = 0;
+      } else {
+        float v = sqrt(pow(phi - legs[leg].phi, 2) + pow(z - legs[leg].z, 2));
+        float u = sqrt(pow(phi - phi0, 2) + pow(z - z0, 2));
+        float t = sqrt(pow(phi0 - legs[leg].phi, 2) + pow(z0 - legs[leg].z, 2));
+        theta = acos((pow(t, 2) - pow(t, 2) - pow(v, 2))/(-2.0*t*u));
+        
+        float w = sqrt(pow(phi - phi0 - 1.0, 2) + pow(z - z0, 2));
+        if(phi > 0.0) {
+          delta = acos((pow(w, 2) - pow(u, 2) - 1.0)/(-2.0*u));
+        } else {
+          delta = acos((pow(w, 2) - pow(u, 2) - 1.0)/(-2.0*u)) - theta;
+        }
+      }
+      float stepTheta = theta/(float)(resolution-1);
+      
       #ifdef DEBUG
-        Serial.println("[INF]\t[TRACE]\tTracing leg #" + (String)leg + " from [" + (String)legs[leg].phi + "; " + (String)legs[leg].z + "] to [" + (String)phi + "; " + (String)z + "] (linear trace)");
+        Serial.println("[INF]\t[TRACE]\tTracing leg #" + (String)leg + " from [" + (String)legs[leg].phi + "; " + (String)legs[leg].z + "] to [" + (String)phi + "; " + (String)z + "] (elliptic trace)");
+        Serial.println("\t\tTrace parameters:\ta\tb\tphi0\tz0\tdelta\ttheta");
+        Serial.println("\t\t\t\t\t" + (String)a + "\t" + (String)b + "\t" + (String)phi0 + "\t" + (String)z0 + "\t" + (String)(delta*(180.0/PI)) + "\t" + (String)(theta*(180.0/PI)));
       #endif
       
-      float stepPhi = (phi-legs[leg].phi)/(float)(resolution-1);
-      float stepZ = (z-legs[leg].z)/(float)(resolution-1);
-      for(int i=0; i<resolution; i++) {
-          path[i].phi = stepPhi*(float)i + legs[leg].phi;
-          path[i].z = stepZ*(float)i + legs[leg].z;
+      if(phi > legs[leg].phi) {
+        int j = 0;
+        for(int i=resolution-1; i>=0; i--) {
+          path[i].phi = phi0 + a*cos(stepTheta*(float)j + delta);
+          path[i].z = z0 + b*sin(stepTheta*(float)j + delta);
+          j++;
+        }
+      } else if(phi == legs[leg].phi) {
+        //TODO: vertical directions?
+      } else {
+        for(int i=0; i<resolution; i++) {
+          path[i].phi = phi0 + a*cos(stepTheta*(float)i + delta);
+          path[i].z = z0 + b*sin(stepTheta*(float)i + delta);
+        }
       }
     }
+
     #ifdef VERBOSE
       Serial.print("\n\t\tPhi trace:\t\t");
       for(int i=0; i<resolution; i++) {
@@ -165,8 +215,7 @@ pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, bo
   }
 }
 
-//void AP_Utils::setLegs(leg *legs, bool smooth, float speed, bool circular) {
-void AP_Utils::setLegs(leg *legs, bool circular = true, float speed = 2.5) {
+void AP_Utils::setLegs(leg *legs, uint8_t shape) {
   int resolution = 50;
   uint8_t total = 0;
   uint8_t toMove[6] = {255, 255, 255, 255, 255, 255};
@@ -179,7 +228,7 @@ void AP_Utils::setLegs(leg *legs, bool circular = true, float speed = 2.5) {
   
   pointLeg paths[total][resolution];
   for(int i=0; i<total; i++) {
-    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution, circular);
+    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution, shape);
     for(int j=0; j<resolution; j++) {
       paths[i][j] = *(tmp+j);
     }
@@ -218,7 +267,6 @@ void AP_Utils::setLegs(leg *legs, bool circular = true, float speed = 2.5) {
     for(int i=0; i<total; i++) {
       pwmove(horizontal[toMove[i]], 40.0*paths[i][j].phi + 90.0);
       pwmove(vertical[toMove[i]], 40.0*paths[i][j].z + 90.0);
-      //delayMicroseconds((700.0*(cos((float)j*((2.0*PI))/(float)resolution) + 1.0))*(6.0/total));
     }
     delayMicroseconds((6.0/(float)total)*1000.0);
   }
@@ -228,15 +276,15 @@ void AP_Utils::setLegs(leg *legs, bool circular = true, float speed = 2.5) {
   }
 }
 
-void AP_Utils::walk(float distance, int direction, float speed) {
+void AP_Utils::walk(float distance, int direction) {
   float remainingDistance = distance;
   float remainingAngle = direction;
   //create target position
-  body target;
+  /*body target;
   target.x = sin(direction)*distance; 
   target.y = cos(direction)*distance;
   target.z = 0; //TODO: height parameter
-  target.facing = direction;
+  target.facing = direction;*/
   //calculate path resolution
   float maxStepLength = 0.089; //step = approx. 8.9 cm max for legs 0, 2, 3 and 5
   float stepLength = maxStepLength/1.0;
@@ -256,8 +304,74 @@ void AP_Utils::walk(float distance, int direction, float speed) {
   }
 }
 
-void AP_Utils::step(float length, float speed) {
+void AP_Utils::step(float length) {
   
+}
+
+void AP_Utils::turn(int deg) {
+  /*leg legs[6] = {{0, false, 1, -1}, {1, false, 1, -1}, {2, false, 1, -1}, {3, false, 1, -1}, {4, false, 1, -1}, {5, false, 1, -1}};
+  setLegs(legs, true);
+  int remaining = deg;
+  while(remaining >= 80) {
+    for(int i=0; i<3; i++) {
+      legs[i].move = true;
+      legs[i].phi = 1;
+      legs[i+3].move = true;
+      legs[i+3].phi = 1;
+      setLegs(legs);
+    }
+    for(int i=0; i<6; i++) {
+      legs[i].move = true;
+      legs[i].phi = -1;
+    }
+    setLegs(legs);
+    remaining -= 80;
+  }
+  for(int i=0; i<6; i++) {
+    legs[i].move = true;
+    legs[i].phi = 0;
+  }
+  setLegs(legs, false);*/
+  if(deg > 360) {
+    deg -= 360;
+  }
+  int direction = 1;
+  if(deg > 180) {
+    direction = -1;
+    deg -= 180;
+  }
+  //calculate turn step size and amount
+  float size = deg;
+  int numSteps = 0;
+  while(size > 40.0) {
+    numSteps++;
+    size = ((float)deg)/((float)numSteps);
+  }
+  leg legs[6] = {{0, true, 0, -1}, {1, true, 0, -1}, {2, true, 0, -1}, {3, true, 0, -1}, {4, true, 0, -1}, {5, true, 0, -1}};
+  setLegs(legs, LINEAR);
+  for(int i=0; i<numSteps; i++) {
+    //set legs to new positions
+    for(int j=0; j<3; j++) {
+      legs[j].move = true;
+      legs[j].phi = ((float)direction)*(size/80.0);
+      legs[j+3].move = true;
+      legs[j+3].phi = ((float)direction)*(size/80.0);
+      setLegs(legs, CIRCULAR);
+    }
+    //set body to new position
+    for(int j=0; j<6; j++) {
+      legs[j].move = true;
+      legs[j].phi = -1.0*((float)direction)*(size/80.0);
+    }
+    setLegs(legs, LINEAR);
+  }
+  
+  //last 40 deg step
+  /*for(int i=0; i<6; i++) {
+    legs[i].move = true;
+    legs[i].phi = 0;
+  }
+  setLegs(legs, true);*/
 }
 
 void AP_Utils::reset(void) {
@@ -399,7 +513,7 @@ float AP_Utils::sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, i
   #endif
     pause = 0;
   } else {
-    pause = time/samples - 12;
+    pause = time/samples - 12.0;
   }
   for(int i=0; i<samples; i++) {
     value = sr04(trig, echo, unit);
