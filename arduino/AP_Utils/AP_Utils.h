@@ -74,8 +74,9 @@ class AP_Utils {
   void reset(void);
   
   void moveServo(uint8_t servo, int deg, bool smooth = true, float speed = 2.5);
-  pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution, uint8_t shape = LINEAR);
-  void setLegs(leg *legs, uint8_t shape = LINEAR);
+  pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution, uint8_t shapes);
+  void setLegs(leg *legs, int shape = LINEAR);
+  void setLegs(leg *legs, int *shape);
   void walk(float distance, int direction);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
@@ -83,7 +84,7 @@ class AP_Utils {
   float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
   
   //TODO: move to private after testing
-  void step(float length);
+  void step(float length = 1.0);
   void turn(int deg);
  private:
   int _offsets[16];

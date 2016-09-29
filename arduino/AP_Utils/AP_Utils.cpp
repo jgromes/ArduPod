@@ -93,14 +93,11 @@ pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, ui
     }
       
     if(shape == CIRCULAR) {
-      //Circular section parameters
       float s = sqrt(pow(phi - legs[leg].phi, 2) + pow(z - legs[leg].z, 2));
       float h = s/2.0; //TODO: adjust
       float r = h/2.0 + pow(s, 2)/(8.0*h);
-      //linear function coefficients
       float A = (legs[leg].z - z)/(legs[leg].phi - phi);
       float B = legs[leg].z - A*legs[leg].phi;
-      //vector rotation
       float m = sqrt(pow(r, 2) - pow(s/2.0, 2));
       float phi0 = 0.5*(phi - legs[leg].phi) + (m/s)*(z - legs[leg].z) + legs[leg].phi;
       float z0 = 0.5*(z - legs[leg].z) - (m/s)*(phi - legs[leg].phi) + legs[leg].z;
@@ -215,7 +212,7 @@ pointLeg* AP_Utils::traceLeg(uint8_t leg, float phi, float z, int resolution, ui
   }
 }
 
-void AP_Utils::setLegs(leg *legs, uint8_t shape) {
+void AP_Utils::setLegs(leg *legs, int shape) {
   int resolution = 50;
   uint8_t total = 0;
   uint8_t toMove[6] = {255, 255, 255, 255, 255, 255};
@@ -269,6 +266,69 @@ void AP_Utils::setLegs(leg *legs, uint8_t shape) {
       pwmove(vertical[toMove[i]], 40.0*paths[i][j].z + 90.0);
     }
     delayMicroseconds((6.0/(float)total)*1000.0);
+    //TODO: parametric/sine speed
+  }
+  
+  for(int i=0; i<6; i++) {
+    legs[i].move = false;
+  }
+}
+
+void AP_Utils::setLegs(leg *legs, int *shapes) {
+  int resolution = 50;
+  uint8_t total = 0;
+  uint8_t toMove[6] = {255, 255, 255, 255, 255, 255};
+  for(int i=0; i<6; i++) {
+    if(legs[i].move) {
+      toMove[total] = legs[i].number;
+      total++;
+    }
+  }
+  
+  pointLeg paths[total][resolution];
+  for(int i=0; i<total; i++) {
+    pointLeg* tmp = traceLeg(toMove[i], legs[toMove[i]].phi, legs[toMove[i]].z, resolution, shapes[i]);
+    for(int j=0; j<resolution; j++) {
+      paths[i][j] = *(tmp+j);
+    }
+    delete[] tmp;
+  }
+  
+  /*#ifdef DEBUG
+    for(int i=0; i<total; i++) {
+      Serial.print("[INF]\t[LEG ");
+      Serial.print(toMove[i]);
+      Serial.print("]\tPhi:\t(raw)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(paths[i][j].phi, 3);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\t\t(deg)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(40.0*paths[i][j].phi + 90.0);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\tZ:\t(raw)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(paths[i][j].z, 3);
+        Serial.print('\t');
+      }
+      Serial.print("\n\t\t\t(deg)\t");
+      for(int j=0; j<resolution; j++) {
+        Serial.print(40.0*paths[i][j].z + 90.0);
+        Serial.print('\t');
+      }
+      Serial.println();
+    }
+  #endif*/
+  
+  for(int j=0; j<resolution; j++) {
+    for(int i=0; i<total; i++) {
+      pwmove(horizontal[toMove[i]], 40.0*paths[i][j].phi + 90.0);
+      pwmove(vertical[toMove[i]], 40.0*paths[i][j].z + 90.0);
+    }
+    delayMicroseconds((6.0/(float)total)*1000.0);
+    //TODO: parametric/sine speed
   }
   
   for(int i=0; i<6; i++) {
@@ -305,33 +365,44 @@ void AP_Utils::walk(float distance, int direction) {
 }
 
 void AP_Utils::step(float length) {
+  leg legs[6] = {{0, true, 0, -0.8}, {1, true, 0, -0.8}, {2, true, 0, -0.8}, {3, true, 0, -0.8}, {4, true, 0, -0.8}, {5, true, 0, -0.8}};
   
+  float front = 1.0;
+  float side = 0.6;
+  int A[6] = {ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR};
+  legs[0].move = true;
+  legs[0].phi = front;
+  legs[2].move = true;
+  legs[2].phi = front;
+  legs[4].move = true;
+  legs[4].phi = -1.0*side;
+
+  legs[1].move = true;
+  legs[1].phi = -1.0*side;
+  legs[3].move = true;
+  legs[3].phi = front;
+  legs[5].move = true;
+  legs[5].phi = front;
+  setLegs(legs, A);
+
+  int B[6] = {LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC};
+  legs[1].move = true;
+  legs[1].phi = side;
+  legs[3].move = true;
+  legs[3].phi = -1.0*front;
+  legs[5].move = true;
+  legs[5].phi = -1.0*front;
+
+  legs[0].move = true;
+  legs[0].phi = -1.0*front;
+  legs[2].move = true;
+  legs[2].phi = -1.0*front;
+  legs[4].move = true;
+  legs[4].phi = side;
+  setLegs(legs, B);
 }
 
 void AP_Utils::turn(int deg) {
-  /*leg legs[6] = {{0, false, 1, -1}, {1, false, 1, -1}, {2, false, 1, -1}, {3, false, 1, -1}, {4, false, 1, -1}, {5, false, 1, -1}};
-  setLegs(legs, true);
-  int remaining = deg;
-  while(remaining >= 80) {
-    for(int i=0; i<3; i++) {
-      legs[i].move = true;
-      legs[i].phi = 1;
-      legs[i+3].move = true;
-      legs[i+3].phi = 1;
-      setLegs(legs);
-    }
-    for(int i=0; i<6; i++) {
-      legs[i].move = true;
-      legs[i].phi = -1;
-    }
-    setLegs(legs);
-    remaining -= 80;
-  }
-  for(int i=0; i<6; i++) {
-    legs[i].move = true;
-    legs[i].phi = 0;
-  }
-  setLegs(legs, false);*/
   if(deg > 360) {
     deg -= 360;
   }
@@ -340,38 +411,34 @@ void AP_Utils::turn(int deg) {
     direction = -1;
     deg -= 180;
   }
-  //calculate turn step size and amount
+  
+  leg legs[6] = {{0, true, 0, -0.8}, {1, true, 0, -0.8}, {2, true, 0, -0.8}, {3, true, 0, -0.8}, {4, true, 0, -0.8}, {5, true, 0, -0.8}};
   float size = deg;
   int numSteps = 0;
   while(size > 40.0) {
     numSteps++;
     size = ((float)deg)/((float)numSteps);
   }
-  leg legs[6] = {{0, true, 0, -1}, {1, true, 0, -1}, {2, true, 0, -1}, {3, true, 0, -1}, {4, true, 0, -1}, {5, true, 0, -1}};
-  setLegs(legs, LINEAR);
-  for(int i=0; i<numSteps; i++) {
-    //set legs to new positions
-    for(int j=0; j<3; j++) {
+  float stepPhi = size/60.0; //should be 80
+  
+
+  for(int i=0; i<(numSteps+1); i++) {
+    for(int j=0; j<6; j+=2) {
       legs[j].move = true;
-      legs[j].phi = ((float)direction)*(size/80.0);
-      legs[j+3].move = true;
-      legs[j+3].phi = ((float)direction)*(size/80.0);
-      setLegs(legs, CIRCULAR);
+      legs[j].phi = stepPhi;
+      legs[j+1].move = true;
+      legs[j+1].phi = -2.0*stepPhi;
     }
-    //set body to new position
+    int A[6] = {ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR};
+    setLegs(legs, A);
+    
     for(int j=0; j<6; j++) {
       legs[j].move = true;
-      legs[j].phi = -1.0*((float)direction)*(size/80.0);
+      legs[j].phi = 0;
     }
-    setLegs(legs, LINEAR);
+    int B[6] = {LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC};
+    setLegs(legs, B);
   }
-  
-  //last 40 deg step
-  /*for(int i=0; i<6; i++) {
-    legs[i].move = true;
-    legs[i].phi = 0;
-  }
-  setLegs(legs, true);*/
 }
 
 void AP_Utils::reset(void) {
