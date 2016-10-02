@@ -4,6 +4,7 @@ body_bottom	1x
 body_top	1x
 leg1		6x
 leg1_seg1	6x
+leg2_seg1	12x
 leg2_segA	6x
 leg2_segB	6x
 leg2_segC	6x
