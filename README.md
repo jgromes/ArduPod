@@ -1,8 +1,8 @@
 # ArduPod
 ## Arduino-based hexapod robot
-**Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com/how-tos/arduino-guide/how-to-arduino-hexapod-part-1-mechanics-and-wiring/)?**
+**Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com/how-tos/arduino-guide/how-to-arduino-hexapod-part-1-mechanics-and-wiring/)? And the [second one](http://http://www.deviceplus.com/how-tos/arduino-guide/arduino-hexapod-part-2-programming/)? AND the [third one]()?**
 
-If not, go read it! If you did, and still didn't run away, good job! Here you will find all the files used in the article.
+If not, go read them, they're cool! If you did, and still didn't run away, good job! Here you will find all the files used in the article.
 
 * **/arduino/**
 
@@ -15,3 +15,7 @@ If not, go read it! If you did, and still didn't run away, good job! Here you wi
    Files for 3D printing in the following formats: STL, SolidWorks parts, SketchUp
    
    See /model/stl/printing_instructions.txt for details.
+
+* **/processing/**
+
+   Processing app source codes
