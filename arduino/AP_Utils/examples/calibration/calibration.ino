@@ -20,11 +20,12 @@
 //create AP_Utils object to access the functions
 AP_Utils ardupod;
 
-void setup() {}
-
-void loop() {
+void setup() {
   //initialize the offset array, you can change the numbers and observe the effect on the servos
   int offsets[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   //start ArduPod with the offsets
   ardupod.begin(offsets);
+  while(true);
 }
+
+void loop() {}
