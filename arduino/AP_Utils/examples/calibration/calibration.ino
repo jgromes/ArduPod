@@ -25,7 +25,6 @@ void setup() {
   int offsets[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   //start ArduPod with the offsets
   ardupod.begin(offsets);
-  while(true);
 }
 
 void loop() {}
