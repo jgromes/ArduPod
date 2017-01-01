@@ -9,13 +9,22 @@
 
 #include <Adafruit_PWMServoDriver.h>
 
+/*WARNING:  Debug mode is designed to be used ONLY with Arduino IDE Serial Monitor and when connected by a cable.
+ *          Do NOT use with the Processing app or when connected by Bluetooth!
+            Seriously. Bad stuff is going to happen if you decide to ignore this warning.
+ */
 //#define DEBUG
 
 #ifdef DEBUG
-  #define VERBOSE
+  //#define VERBOSE
 #endif
 
 #define PWM_FREQ 60
+
+#define FORWARD   0
+#define BACKWARD  1
+#define LEFT      2
+#define RIGHT     3
 
 #define M  1
 #define CM 100
@@ -77,15 +86,15 @@ class AP_Utils {
   pointLeg* traceLeg(uint8_t leg, float phi, float z, int resolution, uint8_t shapes);
   void setLegs(leg *legs, int shape = LINEAR);
   void setLegs(leg *legs, int *shape);
-  void walk(float distance, int direction);
+  
+  void stretch(void);
+  void step(int direction);
+  void turn(int deg);
+  void walk(int direction);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
   float sr04_average(uint8_t trig, uint8_t echo, int unit, int samples, int time);
   float sr04_median(uint8_t trig, uint8_t echo, int unit, int samples, int time);
-  
-  //TODO: move to private after testing
-  void step(float length = 1.0);
-  void turn(int deg);
  private:
   int _offsets[16];
   servo servos[16];
@@ -95,7 +104,6 @@ class AP_Utils {
   uint8_t horizontal[6] = {0, 2, 4, 6, 8, 10};
   uint8_t vertical[6] = {1, 3, 5, 7, 9, 11};
 
-  
   int pulseLength(int deg);
   void pwmove(uint8_t i, int deg);
   int checkBounds(uint8_t number, int deg);
