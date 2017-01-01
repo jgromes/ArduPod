@@ -42,6 +42,14 @@ This library allows even less Arduino-experienced users to program their ArduPod
   
   **Note**: It is NOT possible to achieve the same effect by using multiple calls to `moveServo`, as this function will only move one servo at a time!
 
+* `stretch(void)`
+  Raise and lower all the legs. This can be useful when one of the legs gets stuck.
+
+* `step(int direction)`
+  ArduPod will take a single step in the given direction. Supported directions are `FORWARD`, `BACKWARD`, `LEFT` and `RIGHT`. Note that `LEFT` and `RIGHT` will turn the robot one step (approx. 30 degrees).
+
+* `walk(int direction)`
+  Each time this function is called, Ardupod will walk one step in the given direction. Unlike the `step` function however, legs will not be reset to the default position, allowing for continous movement by calling this function again. Supported directions are `FORWARD`, `BACKWARD`, `LEFT` and `RIGHT`. Note that `LEFT` and `RIGHT` will turn the robot on the spot.
 
 * `sr04(uint8_t trig, uint8_t echo, int unit)`
 
