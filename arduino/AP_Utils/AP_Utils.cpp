@@ -493,45 +493,6 @@ void AP_Utils::step(int direction) {
   }
 }
 
-void AP_Utils::turn(int deg) {
-  if(deg > 360) {
-    deg -= 360;
-  }
-  int direction = 1;
-  if(deg > 180) {
-    direction = -1;
-    deg -= 180;
-  }
-  
-  leg legs[6] = {{0, true, 0, -0.8}, {1, true, 0, -0.8}, {2, true, 0, -0.8}, {3, true, 0, -0.8}, {4, true, 0, -0.8}, {5, true, 0, -0.8}};
-  float size = deg;
-  int numSteps = 0;
-  while(size > 40.0) {
-    numSteps++;
-    size = ((float)deg)/((float)numSteps);
-  }
-  float stepPhi = size/60.0; //TODO: should be 80
-  
-
-  for(int i=0; i<(numSteps+1); i++) {
-    for(int j=0; j<6; j+=2) {
-      legs[j].move = true;
-      legs[j].phi = stepPhi;
-      legs[j+1].move = true;
-      legs[j+1].phi = -2.0*stepPhi;
-    }
-    int A[6] = {ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR};
-    setLegs(legs, A);
-    
-    for(int j=0; j<6; j++) {
-      legs[j].move = true;
-      legs[j].phi = 0;
-    }
-    int B[6] = {LINEAR, ELLIPTIC, LINEAR, ELLIPTIC, LINEAR, ELLIPTIC};
-    setLegs(legs, B);
-  }
-}
-
 void AP_Utils::walk(int direction) {
   
 }

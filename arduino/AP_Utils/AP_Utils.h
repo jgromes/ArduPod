@@ -89,7 +89,6 @@ class AP_Utils {
   
   void stretch(void);
   void step(int direction);
-  void turn(int deg);
   void walk(int direction);
   
   float sr04(uint8_t trig, uint8_t echo, int unit);
