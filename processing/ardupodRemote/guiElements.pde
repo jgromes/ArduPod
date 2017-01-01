@@ -4,7 +4,7 @@ Textfield inputField;
 Button scanButton, measureButton, connectButton, disconnectButton, moveW, moveA, moveS, moveD;
 Slider angleSlider;
 ScrollableList portsList;
-String version = "0.0.0-alpha-1";
+String version = "1.0";
 
 public void guiSetup() {
   cp5 = new ControlP5(this);
