@@ -1,4 +1,7 @@
 # ArduPod
+
+[![ArduPod Remote Control](http://img.youtube.com/vi/DwULq69LcQs/maxresdefault.jpg)](http://www.youtube.com/watch?v=DwULq69LcQs)
+
 ## Arduino-based hexapod robot
 **Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com/how-tos/arduino-guide/how-to-arduino-hexapod-part-1-mechanics-and-wiring/)? And the [second one](http://www.deviceplus.com/how-tos/arduino-guide/arduino-hexapod-part-2-programming/)? AND the [third one]()?**
 
