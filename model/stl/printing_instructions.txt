@@ -9,6 +9,7 @@ leg2_segA	6x
 leg2_segB	6x
 leg2_segC	6x
 leg3_f		12x
+leg4           6x
 leg_bond1_f	24x
 leg_bond2_f	12x
 
