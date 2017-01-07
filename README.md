@@ -1,6 +1,6 @@
 # ArduPod
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=DwULq69LcQs" target="_blank"><img src="http://img.youtube.com/vi/DwULq69LcQs/maxresdefault.jpg" alt="ArduPod Remote Control" width="640" height="360"/></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=DwULq69LcQs" target="_blank"><img src="http://img.youtube.com/vi/UzcBlvJY_mQ/maxresdefault.jpg" alt="ArduPod Remote Control" width="640" height="360"/></a>
 
 ## Open Source Arduino Hexapod
 **Did you read the main ArduPod article at [DevicePlus](http://www.deviceplus.com/how-tos/arduino-guide/how-to-arduino-hexapod-part-1-mechanics-and-wiring/)? And the [second one](http://www.deviceplus.com/how-tos/arduino-guide/arduino-hexapod-part-2-programming/)? AND the [third one]()?**
