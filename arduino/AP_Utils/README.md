@@ -4,7 +4,7 @@ DISCLAIMER: This library is provided 'AS IS'. See ```license.txt``` for details.
 
 IMPORTANT: Please note that this library requires [Adafruit PWM driver library](https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library) to be properly installed in your ```libraries``` folder. Adafruit PWM library is currently not provided with AP_Utils and has to be installed separately!
 
-This library allows even less Arduino-experienced users to program their ArduPod. The main part of this library is lower-level servo and sensor control, plus a higher-level API in Arduino style that allows fro easy ArduPod control. The following is a list of currently implemented or work-in-progress (WIP) features and API description, see included examples for details.
+This library allows even less Arduino-experienced users to program their ArduPod. The main part of this library is lower-level servo and sensor control, plus a higher-level API in Arduino style that allows for easy ArduPod control. The following is a list of currently implemented features and API description, see included examples for details.
 
 
 * `AP_Utils(void)`
